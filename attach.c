@@ -259,3 +259,97 @@ attach_main(int noerror)
 	}
 	return 0;
 }
+
+unsigned char fromhex(const unsigned char* c, int l)
+{
+	if (l == 1)
+	{
+		if (c[0] >= '0' && c[0] <= '9')
+			return c[0] - '0';
+		else if (c[0] >= 'a' && c[0] <= 'f')
+			return c[0] - 'a' + 10;
+		else if (c[0] >= 'A' && c[0] <= 'F')
+			return c[0] - 'A' + 10;
+		return 0;
+	}
+	return (fromhex(c, 1) << (l-1)*4) | fromhex(c+1, l-1);
+}
+
+int unescape(unsigned char**src, unsigned char*dst, int dstlen)
+{
+	int di = 0;
+	for (; di < dstlen; ++*src)
+	{
+		switch(**src)
+		{
+			case '\0':
+				return di;
+			case '\\':
+				++*src;
+				switch(**src)
+				{
+					case 'n':
+						dst[di] = '\n';
+						break;
+					case 'r':
+						dst[di] = '\r';
+						break;
+					case '0':
+						dst[di] = '\0';
+						break;
+					case 'x':
+						{
+							++*src;
+							if (**src == '\0') return di;
+							++*src;
+							if (**src == '\0') return di;
+							dst[di] = fromhex(*src-1, 2);
+						}
+						break;
+					default:
+						dst[di] = **src;
+						break;
+					}
+				break;
+			default:
+				dst[di] = **src;
+				break;
+		}
+		di++;
+	}
+	return di;
+}
+
+int push_main(char** argv, int argc)
+{
+	struct packet pkt;
+	int s;
+	unsigned char * arg;
+	unsigned char * cmd = (unsigned char *)pkt.u.buf;
+
+	while(argc > 0)
+	{
+		arg = (unsigned char *)*argv;
+
+		s = connect_socket(sockname);
+		pkt.type = MSG_ATTACH;
+		write(s, &pkt, sizeof(struct packet));
+
+		while (*arg != '\0')
+		{
+			pkt.type = MSG_PUSH;
+			pkt.len = unescape(&arg, cmd, sizeof(struct winsize));
+			if (pkt.len > 0)
+				write(s, &pkt, sizeof(struct packet));
+		}
+		argv++; argc--;
+		if (argc > 0)
+		{
+			pkt.type = MSG_PUSH;
+			pkt.len = 1;
+			*pkt.u.buf = ' ';
+			write(s, &pkt, sizeof(struct packet));
+		}
+	}
+	return 0;
+}

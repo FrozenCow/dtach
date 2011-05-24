@@ -55,6 +55,7 @@ usage()
 		"       dtach -A <socket> <options> <command...>\n"
 		"       dtach -c <socket> <options> <command...>\n"
 		"       dtach -n <socket> <options> <command...>\n"
+		"       dtach -p <socket> <options> <data...>\n"
 		"Modes:\n"
 		"  -a\t\tAttach to the specified socket.\n"
 		"  -A\t\tAttach to the specified socket, or create it if it\n"
@@ -62,6 +63,7 @@ usage()
 		"  -c\t\tCreate a new socket and run the specified command.\n"
 		"  -n\t\tCreate a new socket and run the specified command "
 		"detached.\n"
+		"  -p\t\tPushes data (characters) to the specified socket.\n"
 		"Options:\n"
 		"  -e <char>\tSet the detach character to <char>, defaults "
 		"to ^\\.\n"
@@ -102,7 +104,7 @@ main(int argc, char **argv)
 		if (mode == '?')
 			usage();
 		else if (mode != 'a' && mode != 'c' && mode != 'n' &&
-			 mode != 'A')
+			 mode != 'A' && mode != 'p')
 		{
 			printf("%s: Invalid mode '-%c'\n", progname, mode);
 			printf("Try '%s --help' for more information.\n",
@@ -215,7 +217,7 @@ main(int argc, char **argv)
 		dont_have_tty = 1;
 	}
 
-	if (dont_have_tty && mode != 'n')
+	if (dont_have_tty && mode != 'n' && mode != 'p')
 	{
 		printf("%s: Attaching to a session requires a terminal.\n",
 			progname);
@@ -257,6 +259,10 @@ main(int argc, char **argv)
 			}
 			return attach_main(0);
 		}
+	}
+	else if (mode == 'p')
+	{
+		return push_main(argv, argc);
 	}
 	return 0;
 }

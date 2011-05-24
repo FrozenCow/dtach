@@ -112,7 +112,24 @@ For example, this command tells dtach to attach to a session at
 When creating a new session (with the -c or -A modes), the specified
 method is used as the default redraw method for the session.
 
-6. CHANGES
+6. PUSHING DATA
+
+When a socket has been created it is possible to push data to such an
+socket. This way scripts can 'type' into the detached without having a
+tty.
+
+For example, the following command will sent 'hello' followed by an
+return into the program:
+	$ dtach -p /tmp/foozle 'hello\n'
+
+Another example which might be practical in some situations is sending
+^C (SIGINT) to a program. This way a process can be killed based on
+their socket without looking up a pid:
+	$ dtach -p /tmp/foozle '\x03'
+
+The escape character that can be used are \n, \r, \0, \xXX (hexadecimal).
+
+7. CHANGES
 
 The changes in version 0.8 are:
 - When using dtach -A or dtach -c, the master will now wait until the client
@@ -172,7 +189,7 @@ The changes in version 0.3 are:
 - Added some more autoconf checks.
 - Initial sourceforge release.
  
-7. AUTHOR
+8. AUTHOR
 
 dtach is (C)Copyright 2004-2008 Ned T. Crigler, and is under the GNU General
 Public License.
